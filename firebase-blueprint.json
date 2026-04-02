@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A booking request from a potential client.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the person booking the call."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the person booking the call."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the person booking the call."
+        },
+        "company": {
+          "type": "string",
+          "description": "Company name of the person booking the call."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The time the appointment was created."
+        }
+      },
+      "required": ["name", "email", "phone", "company", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Collection of appointment booking requests."
+    }
+  }
+}

@@ -1,0 +1,66 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file assumes the following data structures:
+//
+// Collection: appointments
+// Document ID: auto-generated
+// Fields:
+//   - name: string (required, 2-100 chars) - Full name of the person booking
+//   - email: string (required, email format) - Email address
+//   - phone: string (required, 10-20 chars) - Phone number
+//   - company: string (required, 2-100 chars) - Company name
+//   - createdAt: timestamp (required) - Creation time
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "dusaabhiram123@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['name', 'email', 'phone', 'company', 'createdAt']) &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             isValidEmail(data.email) &&
+             data.phone is string && data.phone.size() >= 10 && data.phone.size() <= 20 &&
+             data.company is string && data.company.size() >= 2 && data.company.size() <= 100 &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /appointments/{appointmentId} {
+      // Allow anyone to book an appointment
+      allow create: if isValidAppointment(request.resource.data);
+      
+      // Only admins can read, update, or delete appointments
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
